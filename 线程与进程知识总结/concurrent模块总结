@@ -1,0 +1,101 @@
+concurrent模块是python提供的异步并行任务编程模块，提供了一个高级的异步可执行的便利接口。
+python的这个模块提供了线程池执行器和进程池执行器，直接拿来就可以用，不用自己单独写。很方便。
+
+ThreadPoolExecutor 异步调用的线程池执行器
+ProcessPoolExecutor 异步调用的进程池执行器
+
+线程池与进程池的使用方法都一样，区别就是建立的实例对象不同。
+
+方法：
+executorT = ThreadPoolExecutor(max_workers=1) 初创一个线程池对象，max_workers指最多创建容纳多少个线程的池子来同时异步执行，返回Executor实例
+executorP = ProcessPoolExecutor(max_workers=1) 创建进程池对象，里面装的是最多容纳的进程数
+下面的方法基本都一样：
+f = executorT.submit(fn, *args, **kwargs) 提交执行的函数与参数，返回Futures实例
+executorT.shutdown(wait=True) 清理池子
+f.done() 如果调用被成功的取消或者执行完成了，返回True
+f.cancalled() 如果调用被成功的取消了，返回True
+f.running() 如果正在运行且不能被取消，返回True
+f.cancel() 尝试取消调用，如果已经运行且不能被取消，返回False
+f.result(timeout=None) 取返回的结果，timeout为None无限等待返回结果，timeout设置了且到期，返回concurrent.futures.TimeoutError
+f.exception(timeout=None) 去返回的异常，timeout为None无限等待返回的异常结果，timeout设置了且到期，返回concurrent.futures.TimeoutError
+
+线程池例子：
+import threading
+import logging
+import time
+from concurrent import futures
+
+FORMAT = '%(asctime)-15s\t | [%(processName)s:%(threadName)s, %(process)d:%(thread)8d] | %(message)s'
+logging.basicConfig(level=logging.INFO, format=FORMAT)
+
+def worker(n):
+    logging.info('begin to work {}'.format(n))
+    time.sleep(5) #模拟运行时间
+    logging.info('finished {}'.format(n))
+
+executor = futures.ThreadPoolExecutor(max_workers=3) #创建线程池
+fs = []
+
+#for i in range(3):
+for i in range(6):
+    future = executor.submit(worker, i) #绑定线程池里的线程目标执行函数并传参
+    fs.append(future)
+
+#for i in range(3, 6):
+    #future = executor.submit(worker, i)
+    #fs.append(future)
+
+while True:
+    time.sleep(2)
+    logging.info(threading.enumerate())
+    flag = True
+    for f in fs: #判断是否还有未完成的任务
+        logging.info(f.done())
+        flag = flag and f.done()
+        if not flag:
+            break
+    if flag:
+        executor.shutdown() #清理池子，池中的线程全部杀掉
+        logging.info(threading.enumerate())
+        break
+
+
+进程池例子：
+import threading
+import logging
+import time
+from concurrent import futures
+
+FORMAT = '%(asctime)-15s\t | [%(processName)s:%(threadName)s, %(process)d:%(thread)8d] | %(message)s'
+logging.basicConfig(level=logging.INFO, format=FORMAT)
+
+def worker(n):
+    logging.info('begin to work {}'.format(n))
+    time.sleep(5)  #模拟运行时间
+    logging.info('finished {}'.format(n))
+    return n + 100  #加入了返回结果
+
+if __name__ == '__main__':
+    with futures.ProcessPoolExecutor(max_workers=3) as executor: #进程池/线程池都支持上下文管理，用了上下文管理，内部最后就会清理掉池子
+        fs = []
+        for i in range(6):
+            future = executor.submit(worker, i) #绑定进程池里的线程目标执行函数并传参
+            fs.append(future)
+            
+        while True:
+            time.sleep(2)
+            logging.info(threading.enumerate())
+            flag = True
+            for f in fs:
+                logging.info(f.done())
+                flag = flag and f.done()
+                if f.done():
+                    logging.info('rescult = {}'.format(f.result())) #如果做完返回结果
+            if flag: break
+    
+    
+
+
+
+
+
