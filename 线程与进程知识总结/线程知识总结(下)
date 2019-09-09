@@ -1,0 +1,77 @@
+Semaphore类：Semaphore信号量的使用方法：
+		1. Semaphore(value=1) 构造一个信号量对象，value值就是信号量内部计数器的值，小于0时抛ValueError
+		2. Semaphore.acquire(block=False, timeout=None)  获取信号量，计数器减1，当计数器为0时被阻塞，获取成功返回True
+		3. Semaphore.release() 释放信号量，计数器加1
+
+		BoundedSemaphore类，这个类是有界信号量，用法与Semaphore的使用方法一样，唯一的区别是，在Semaphore中，假设初始化信号量为3，如果没有获取直接
+		释放那么计数器就加了1，变成了4，这就有问题了，因为初始化是3，结果变成了4，跟一开始的初始化不一样。但是在BoundedSemaphore中，信号量是有界的，
+		如果超界了，释放的信号量比初始化多了就会抛出ValueError异常, BoundedSemaphore是Semaphore的子类。
+
+		这个信号量的用法跟Lock是非常像的在信号量的内部维护着一个计数器，获取一次减一，为0的时候就出现了阻塞，需要释放信号量来结束阻塞。可以看出信号量
+		与锁是很相似的，锁可以看做是一种特殊的信号量，锁只允许同一时间的一个线程占用资源，锁的计数器为1。而信号量是可以允许多个线程来访问这个共享资源的
+		但也不是无限制，共享资源的数量是有限的，应用最多的就是连接池。
+	连接池例子。。。
+
+总结一下线程的使用方法，线程模块有5个方法，都是与线程的属性或者状态有关。线程范围内有8个类，关键词是锁的有4个类，Lock, Rlock, Condition, (Bounded
+)Semaphore,Lock和Rlock 都是单纯的获取锁，需要注意的就是获取以后的释放问题，一定要释放掉，否则就是死锁，用到了上下文管理。然后为了解决线程提高效率问
+题，引用了Condition，里面有唤醒机制，这样就避免了等待中的线程无限的去主动查看数据是否准备好，只需要等着被叫就可以了。然后还有Semaphore信号量，一种特
+殊的锁，或者说锁是一种特殊的信号量。这四个类的方法都比较简单也有共性，基本上都要获取，释放。
+
+关键词是等待的有2个类，Event， Barrier。Event的核心就是解决线程同步的问题，里面是一种信号机制，Event就是在等这个信号变成True的时间，等到了就变成Tr
+ue，就不在阻塞，在Event().wait()里面设置的时间看似是阻塞时间，其实是Event信号变成True的时间，wait3秒就是3秒之后发送Ture的信号，这样就起到了阻塞的
+作用。Barrier的作用与Event不同，Barrier并不是在等时间，而是在等个数，好比一场比赛，5个参赛方，但凡少了哪一个这场比赛都进行不下去，如果任意的一方没有
+出现那么就要无限的等待，现实生活中这种情况很好解决，直接取消比赛就行了。但是在线程中并不可能说取消就取消，5个线程哪一个出错了没有准备好，其他4个都会一
+直等下去，所以要有abort方法来打破僵局，等待线程异常退出。最后1个类是使用最多的类，thread 创建线程对象，这个使用的最多。
+
+二，线程安全与GLI
+1. 在线程上还是要关注一下线程安全问题，因为多线程一定是有线程安全问题的，并不是所有的内置数据结构在多线程里都是线程安全的，比如说list，dict，set都不
+能保证线程安全问题，这些容器如果不加锁，是无法准确的获取容器大小的，因为一个线程对其进行了修改，还没等拿回数据就有可能被另一个线程修改了。
+pirnt语句也是线程不安全的，解决的方法可以用logging输出到日志中
+但是Queue就没问题，比如FIFO的Queue和LIFO的栈，优先队列等这些都是线程安全的。因为内部是使用了Lock和condition，适用于多线程之间交换数据。
+
+2. 在CPyhon中有一把大锁，GLI 叫全局解释器锁，这是一把进程级别的锁，在一个进程的多线程里都会受到这把锁的限制，GLI保证了CPython的进程中，只会有一个线
+程来执行字节码，哪怕是多核CPU下，也只会允许一个CPU的一个线程执行。Python中大部分的读写操作都是原子性的，但是python的内置数据结构本身实质上又是线程不
+安全的，那么为什么在进行多线程编程时感觉变的安全了，就是因为有GLI的存在，可以保证这些操作是安全的。
+GLI的问题在IO密集型问题上并不明显，但是对于CPU密集型就会出现某一个线程因为争抢连续的获得GLI而导致其他线程无法使用CPU的效率问题。这种情况下可以使用多
+进程，每一个进程开启一个线程，绕开GLI，这样就可以解决问题。所以在IO密集型情况中可以使用多线程，在CPU密集情况中可以使用多进程。
+
+
+三，多线程：
+1. daemon线程和non_daemon线程  主线程默认是non_daemon线程，daemon=False/True  未设置daemon时，子线程继承父线程。
+不管是父线程还是子线程，线程中有non_daemon的线程，主线程就要等。
+2. join(slef, timeout=None) 可以阻塞线程，timeout未设置时，无限等待，timeout设置时到了时间主线程结束，有join方法，设置daemon没有意义，因为阻塞了
+t1.join()就要等t1结束，t2.join()就要等t2结束。总之谁join了就要等谁
+
+四，进程
+进程与线程用法很类似，线程的那些东西进程里面基本都有，比如说Event, Lock，Rlock，Condition, Barrier, Semaphore这些线程有的东西进程也有，也有不一样
+的。
+Process类，创建一个进程对象，但是里面的API接口跟线程都是一样的，线程对象怎么创建进程对象就怎么创建。
+Process().pid 返回进程的id
+Process().exitcode 返回进程退出的状态码
+Process().terminate() 终止指定的进程
+
+进程池的使用
+multiprocessing.Pool
+p = multiprocessing.Pool(5)  --> 创建5个进程的进程池
+p.apply(self, func, args=(), kwargs={})  阻塞执行，一个个顺着执行, args传一个元组，kwargs传一个字典
+p.apply_async(self, func, args=(), kwargs={}, callback=None, error_callback=None)  与apply的用法一样，这个是非阻塞异步的，得到结果以后会回调
+p.close() 关闭池，池不在接收新的任务
+p.terminate() 结束进程，已经不在处理还没有处理到的任务
+p.join() 主进程阻塞等待子进程的退出，这个方法要在close()或 terminate() 之后使用
+
+例：
+def fn(x):
+    return x+1
+
+if __name__ = '__main__':
+    p = multiprocessing.Pool(10)
+    for i in range(9):
+        p.apply_async(fn, args=(1，)，callback=lambda x : logging.info('{} in callback'.format(x)))
+   p.close()
+   p.join()
+
+
+
+
+
+
