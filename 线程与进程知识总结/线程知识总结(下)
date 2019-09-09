@@ -1,16 +1,59 @@
 Semaphore类：Semaphore信号量的使用方法：
-		1. Semaphore(value=1) 构造一个信号量对象，value值就是信号量内部计数器的值，小于0时抛ValueError
-		2. Semaphore.acquire(block=False, timeout=None)  获取信号量，计数器减1，当计数器为0时被阻塞，获取成功返回True
-		3. Semaphore.release() 释放信号量，计数器加1
+	1. Semaphore(value=1) 构造一个信号量对象，value值就是信号量内部计数器的值，小于0时抛ValueError
+	2. Semaphore.acquire(block=False, timeout=None)  获取信号量，计数器减1，当计数器为0时被阻塞，获取成功返回True
+	3. Semaphore.release() 释放信号量，计数器加1
 
-		BoundedSemaphore类，这个类是有界信号量，用法与Semaphore的使用方法一样，唯一的区别是，在Semaphore中，假设初始化信号量为3，如果没有获取直接
-		释放那么计数器就加了1，变成了4，这就有问题了，因为初始化是3，结果变成了4，跟一开始的初始化不一样。但是在BoundedSemaphore中，信号量是有界的，
-		如果超界了，释放的信号量比初始化多了就会抛出ValueError异常, BoundedSemaphore是Semaphore的子类。
+	BoundedSemaphore类，这个类是有界信号量，用法与Semaphore的使用方法一样，唯一的区别是，在Semaphore中，假设初始化信号量为3，如果没有获取直接
+	释放那么计数器就加了1，变成了4，这就有问题了，因为初始化是3，结果变成了4，跟一开始的初始化不一样。但是在BoundedSemaphore中，信号量是有界的
+	，如果超界了，释放的信号量比初始化多了就会抛出ValueError异常, BoundedSemaphore是Semaphore的子类。
 
-		这个信号量的用法跟Lock是非常像的在信号量的内部维护着一个计数器，获取一次减一，为0的时候就出现了阻塞，需要释放信号量来结束阻塞。可以看出信号量
-		与锁是很相似的，锁可以看做是一种特殊的信号量，锁只允许同一时间的一个线程占用资源，锁的计数器为1。而信号量是可以允许多个线程来访问这个共享资源的
-		但也不是无限制，共享资源的数量是有限的，应用最多的就是连接池。
-	连接池例子。。。
+	这个信号量的用法跟Lock是非常像的在信号量的内部维护着一个计数器，获取一次减一，为0的时候就出现了阻塞，需要释放信号量来结束阻塞。可以看出信号量
+	与锁是很相似的，锁可以看做是一种特殊的信号量，锁只允许同一时间的一个线程占用资源，锁的计数器为1。而信号量是可以允许多个线程来访问这个共享资源
+	的但也不是无限制，共享资源的数量是有限的，应用最多的就是连接池。
+	
+例：连接池简单模拟
+import threading
+import logging
+import random
+
+FORMAT = '%(asctime)-15s\t | [%(threadName)s, %(thread)d] | %(message)s'
+logging.basicConfig(level=logging.INFO, format=FORMAT)
+
+class Conn:
+    def __init__(self, name:str):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+class Pool:
+    def __init__(self, count:int):
+        self.count = count  #初始化一定数目的连接池
+        self.pool = [self._connect('conn - {}'.format(x)) for x in range(count)] #列表解析式里调_connect函数
+        self.semaphore = threading.BoundedSemaphore(count)
+
+    def _connect(self, conn_name):
+        return Conn(conn_name) #初始化时传入名字调Conn类得到一个名字
+
+    def get_conn(self):
+        self.semaphore.acquire()
+        conn = self.pool.pop()
+        return conn
+
+    def return_conn(self, conn:Conn):  #传入一个类
+        self.pool.append(conn)
+        self.semaphore.release()
+
+pool = Pool(3)
+
+def worker(pool:Pool):
+    conn = pool.get_conn()
+    logging.info(conn)
+    threading.Event().wait(random.randint(2,8)) #模拟使用连接时长
+    pool.return_conn(conn)
+
+for i in range(6):
+    threading.Thread(target=worker, name='worker - {}'.format(i), args=(pool,)).start()
 
 总结一下线程的使用方法，线程模块有5个方法，都是与线程的属性或者状态有关。线程范围内有8个类，关键词是锁的有4个类，Lock, Rlock, Condition, (Bounded
 )Semaphore,Lock和Rlock 都是单纯的获取锁，需要注意的就是获取以后的释放问题，一定要释放掉，否则就是死锁，用到了上下文管理。然后为了解决线程提高效率问
