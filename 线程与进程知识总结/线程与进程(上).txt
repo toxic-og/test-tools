@@ -6,63 +6,61 @@
     enumerate() 返回所有活着的线程列表，只包括开始的线程 (包含主线程)
     get_ident() 返回当前线程的id，是一个非0的整数
 
-	thread类：
-		1,创建一个线程实例：threading.Thread(target=函数名，name='线程名'，args=(位置参数), kwargs={关键字参数}, daemon=None)  注意：关键字参数传参时变量要用字符串
-		2,实例属性，方法 name属性获取线程名，getName()方法获取线程名，setName()方法设置线程名
-		ident 返回线程ID，线程启动才有ID，否者为none。线程退出ID依旧可以访问，线程ID可以重复利用
-		is_alive() 可以判断线程是否还活着
-		start() 方法启动一个线程，start只能用一次，start会调用run()方法，run()方法运行的是run函数。只有start能启动多线程
+thread类：
+	1,创建一个线程实例：threading.Thread(target=函数名，name='线程名'，args=(位置参数), kwargs={关键字参数}, daemon=None)  注意：关键字参数传参时变量要用字符串
+	2,实例属性，方法 name属性获取线程名，getName()方法获取线程名，setName()方法设置线程名
+	ident 返回线程ID，线程启动才有ID，否者为none。线程退出ID依旧可以访问，线程ID可以重复利用
+	is_alive() 可以判断线程是否还活着
+	start() 方法启动一个线程，start只能用一次，start会调用run()方法，run()方法运行的是run函数。只有start能启动多线程
 	
-	threading.Timer类：
-		threading.Timer 这是Thread的子类，这个类可以定义一个定时器函数，延时执行
-		threading.Timer(interval, function, args=None, kwargs=None) -> interval 传延迟时长，function -> 传绑定函数名，args用列表传参start执行后，Timer处于等待状态，等待了interval秒后，执行function函数
-	threading.local类：
-		这是一个线程类，用法就是创建一个实例，如：t = threading.local()  得到一个local类实例对象，这个类对象可以得到一个全局对象，然后多线程都可以用这个全局
-		对象互不干扰
+threading.Timer类：
+	threading.Timer 这是Thread的子类，这个类可以定义一个定时器函数，延时执行
+	threading.Timer(interval, function, args=None, kwargs=None) -> interval 传延迟时长，function -> 传绑定函数名，args用列表传参start执行后，Timer处于等待状态，等待了interval秒后，执行function函数
+threading.local类：
+	这是一个线程类，用法就是创建一个实例，如：t = threading.local()  得到一个local类实例对象，这个类对象可以得到一个全局对象，然后多线程都可以用这个全局对象互不干扰
 
-	Event类： 线程同步问题
-		set() 标记设置为True， clear() 标记设置为Flase， is_set() 判断标记是否为True， wait(timeout=None)
-		event事件就是一种信号，信号为True就执行。
-		wait 等待函数，等到了就返回True,等不到就返回Flase. timeout是设置等待时长，这里的等待并不是等timeout的时间，而是等event变成True的时间。
+Event类： 线程同步问题
+	set() 标记设置为True， clear() 标记设置为Flase， is_set() 判断标记是否为True， wait(timeout=None)
+	event事件就是一种信号，信号为True就执行。
+	wait 等待函数，等到了就返回True,等不到就返回Flase. timeout是设置等待时长，这里的等待并不是等timeout的时间，而是等event变成True的时间。
 
-	Lock类：  锁的应用场景，凡是存在共享资源争抢的环境下都可以使用锁。适用于访问和修改同一个共享资源。一旦某个线程获得了锁，那么试图获得锁的其他线程将会被阻塞。
-		1.Lock有两个用法：
-		Lock().acquire(blocking=True，timeout=-1) 获得锁，成功返回True。默认情况下是阻塞的，在阻塞情况下可以设置超时时长timeout，timeout=-1表示永久阻塞。
-		blocking=Flase时为非阻塞模式，这时是禁止设置timeout的。
-		Lock().release() 释放锁。释放锁可以在任意的线程中调用。未上锁的情况下调用release时会抛RuntimeError异常。
-		使用方法：
-		线程并行 --> Lock().acquire()(获得锁)  -->  线程内的处理逻辑块(线程串行)  --> Lock().release()(释放锁)  --> 线程并行
+Lock类：  锁的应用场景，凡是存在共享资源争抢的环境下都可以使用锁。适用于访问和修改同一个共享资源。一旦某个线程获得了锁，那么试图获得锁的其他线程将会被阻塞。
+	1.Lock有两个用法：
+	Lock().acquire(blocking=True，timeout=-1) 获得锁，成功返回True。默认情况下是阻塞的，在阻塞情况下可以设置超时时长timeout，timeout=-1表示永久阻塞。
+	blocking=Flase时为非阻塞模式，这时是禁止设置timeout的。
+	Lock().release() 释放锁。释放锁可以在任意的线程中调用。未上锁的情况下调用release时会抛RuntimeError异常。
+	使用方法：
+	线程并行 --> Lock().acquire()(获得锁)  -->  线程内的处理逻辑块(线程串行)  --> Lock().release()(释放锁)  --> 线程并行
 
-		2.加锁和减锁如果操作不当是会产生死锁情况的，为了避免死锁出现，一般会使用上下文语句进行管理，try...finally的结构
-		锁在使用时最好是注意这么几点：
-					(1)少用锁，因为使用锁多线程在访问这个被锁资源时就变成了类似单线程的串行效果，效率低，要么排队要么争抢，有必要时再用。
-					(2)一定要避免死锁，所以要用上下文管理的语句
-					(3)上锁的时间越短越好，就好比交通拥堵一定是拥堵时间越短越通畅，另外不需要的锁要立即的释放。
-		所以说锁该用的情况下一定要用，但是要知道在哪里用，并不是无节制的随便上锁
+	2.加锁和减锁如果操作不当是会产生死锁情况的，为了避免死锁出现，一般会使用上下文语句进行管理，try...finally的结构
+	锁在使用时最好是注意这么几点：
+	(1)少用锁，因为使用锁多线程在访问这个被锁资源时就变成了类似单线程的串行效果，效率低，要么排队要么争抢，有必要时再用。
+	(2)一定要避免死锁，所以要用上下文管理的语句
+	(3)上锁的时间越短越好，就好比交通拥堵一定是拥堵时间越短越通畅，另外不需要的锁要立即的释放。
+	所以说锁该用的情况下一定要用，但是要知道在哪里用，并不是无节制的随便上锁
 
-	Rlock类： Rlock是线程相关的锁，是可重入锁。使用的方法与Lock一样，但是这个锁是在线程内可以重复获取的，而且在线程内不会阻塞。比如在线程A中重复的获取5次锁
-		这5次都不会阻塞，是在本线程内不阻塞，但是会阻塞其他线程，除非线程A释放完这5次锁。
+Rlock类： Rlock是线程相关的锁，是可重入锁。使用的方法与Lock一样，但是这个锁是在线程内可以重复获取的，而且在线程内不会阻塞。比如在线程A中重复的获取5次锁这5次都不会阻塞，是在本线程内不阻塞，但是会阻塞其他线程，除非线程A释放完这5次锁。
 
-	Condition类：Condition(lock=None) 默认是传入Rlock对象
-		condition构造方法应用于生产者消费者模型中，用于解决生产者消费者速度匹配的问题，这个方法是一种异步的方法，采用了通知机制，非常的有效率。
-		如果没有采用condition，那么生产者生产的数据，消费者是不知道的，就要一直主动的去查看，比较浪费资源，但是用了condition，生产者生产了数据，就
-		会唤醒等待线程，而消费者是在等待的，给消费者发送消息，消费者开始干活。
-		方法：
-		acquire(*args)  获得锁，使用condition 必须要先获得锁
-		wait(self, timeout=None)  无限等待或超时
-		notify(n=1) 唤醒指定数目的等待线程，没有等待的线程就不做操作
-		notify_all()  唤醒所有的等待线程
+Condition类：Condition(lock=None) 默认是传入Rlock对象
+	condition构造方法应用于生产者消费者模型中，用于解决生产者消费者速度匹配的问题，这个方法是一种异步的方法，采用了通知机制，非常的有效率。
+	如果没有采用condition，那么生产者生产的数据，消费者是不知道的，就要一直主动的去查看，比较浪费资源，但是用了condition，生产者生产了数据，就
+	会唤醒等待线程，而消费者是在等待的，给消费者发送消息，消费者开始干活。
+	方法：
+	acquire(*args)  获得锁，使用condition 必须要先获得锁
+	wait(self, timeout=None)  无限等待或超时
+	notify(n=1) 唤醒指定数目的等待线程，没有等待的线程就不做操作
+	notify_all()  唤醒所有的等待线程
 	例子。。。。。
-		因为condition也是使用了锁机制，所以需要获得锁，释放锁，也要使用上下文管理，确保锁一定会被释放
+	
+	因为condition也是使用了锁机制，所以需要获得锁，释放锁，也要使用上下文管理，确保锁一定会被释放
 
-	Barrier类：屏障，路障，道闸的意思，有这么几个使用方式：
-		1. Barrier(parties, action=None, timeout=None) 创造barrier实例对象，parties是指定等待的数目，比如 Barrier(5) 表示这个屏障要等待足够的5个线程都就位之后，
-		这个屏障才会消失，好比田径运动，5个人参赛，但凡不够5人那么其他人就要等第5个就位以后，比赛才能开始，也就是屏障才会撤销，线程继续往下运行。
-		2. Barrier(5).n_waiting  返回的是当前在屏障中等待的线程数
-		3. Barrier(5).wait(timeout=None) 等待通过线程，返回0到线程-1的整数，每个线程返回不同。如果wait设置了超时，并且超时发送了，Barrier处于broken状态
-		4. Barrier(5).broken 判断屏障是否处于破碎状态，如果破碎返回True
-		5. Barrier(5).abort()  这个方法会让屏障处于broken状态，那么在等待中的线程或者调用了等待方法的线程中就会抛出BrokenBarrierError异常，直到reset恢复为止
-		6. Barrier(5).reset() 这个方法可以使broken状态的线程重新恢复成拦截在状态
+Barrier类：屏障，路障，道闸的意思，有这么几个使用方式：
+	1. Barrier(parties, action=None, timeout=None) 创造barrier实例对象，parties是指定等待的数目，比如 Barrier(5) 表示这个屏障要等待足够的5个线程都就位之后，这个屏障才会消失，好比田径运动，5个人参赛，但凡不够5人那么其他人就要等第5个就位以后，比赛才能开始，也就是屏障才会撤销，线程继续往下运行。
+	2. Barrier(5).n_waiting  返回的是当前在屏障中等待的线程数
+	3. Barrier(5).wait(timeout=None) 等待通过线程，返回0到线程-1的整数，每个线程返回不同。如果wait设置了超时，并且超时发送了，Barrier处于broken状态
+	4. Barrier(5).broken 判断屏障是否处于破碎状态，如果破碎返回True
+	5. Barrier(5).abort()  这个方法会让屏障处于broken状态，那么在等待中的线程或者调用了等待方法的线程中就会抛出BrokenBarrierError异常，直到reset恢复为止
+	6. Barrier(5).reset() 这个方法可以使broken状态的线程重新恢复成拦截在状态
 例：
 
 import threading
@@ -90,8 +88,8 @@ for x in range(10,20):
     threading.Thread(target=worker, name='worker - {}'.format(x), args=(barrier,)).start()
 		
 		
-		Barrier的用法大体分为两大类，一种是设置屏障的方法，一种是遇到某种条件打破屏障的方法，在应用中Barrier多应用于并发初始化的时候，例如启动一个程序，
-		需要做加载磁盘文件，缓存预热，初始化连接池等准备工作，这些工作都是并发的，每个线程负责一种，只有都做好了，程序才会继续向下执行，这时候就需要用
-		Barrier设置屏障，在屏障内这些线程都要等待，快的等慢的，只有都准备好了，屏障才会撤销。
-		但是假设数据库的连接失败，那么初始化工作就失败了，就需要用abort打破这个屏障，如果没有abort方法的话，所有线程都会等待那个已经失败的线程，初始化
-		工作就被阻塞在了这里，无限等待中，有了abort方法，等待中的线程就会异常退出，这个阻塞就会消失了。
+Barrier的用法大体分为两大类，一种是设置屏障的方法，一种是遇到某种条件打破屏障的方法，在应用中Barrier多应用于并发初始化的时候，例如启动一个程序，需要做加载磁盘文件，缓存预热，初始化连接池等准备工作，这些工作都是并发的，每个线程负责一种，只有都做好了，程序才会继续向下执行，这时候就需要用Barrier设置屏障，在屏障内这些线程都要等待，快的等慢的，只有都准备好了，屏障才会撤销。
+但是假设数据库的连接失败，那么初始化工作就失败了，就需要用abort打破这个屏障，如果没有abort方法的话，所有线程都会等待那个已经失败的线程，初始化工作就被阻塞在了这里，无限等待中，有了abort方法，等待中的线程就会异常退出，这个阻塞就会消失了。
+
+
+
