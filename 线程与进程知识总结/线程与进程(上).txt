@@ -7,16 +7,15 @@
     get_ident() 返回当前线程的id，是一个非0的整数
 
 	thread类：
-		1,创建一个线程实例：threading.Thread(target=函数名，name='线程名'，args=(位置参数), kwargs={关键字参数}, daemon=None)  注意：关键字参数传参时
-		变量要用字符串
+		1,创建一个线程实例：threading.Thread(target=函数名，name='线程名'，args=(位置参数), kwargs={关键字参数}, daemon=None)  注意：关键字参数传参时变量要用字符串
 		2,实例属性，方法 name属性获取线程名，getName()方法获取线程名，setName()方法设置线程名
-			          ident 返回线程ID，线程启动才有ID，否者为none。线程退出ID依旧可以访问，线程ID可以重复利用
-			          is_alive() 可以判断线程是否还活着
-			          start() 方法启动一个线程，start只能用一次，start会调用run()方法，run()方法运行的是run函数。只有start能启动多线程
-		threading.Timer类：
-			          threading.Timer 这是Thread的子类，这个类可以定义一个定时器函数，延时执行
-			          threading.Timer(interval, function, args=None, kwargs=None) -> interval 传延迟时长，function -> 传绑定函数名，args用列表传参
-			          start执行后，Timer处于等待状态，等待了interval秒后，执行function函数
+		ident 返回线程ID，线程启动才有ID，否者为none。线程退出ID依旧可以访问，线程ID可以重复利用
+		is_alive() 可以判断线程是否还活着
+		start() 方法启动一个线程，start只能用一次，start会调用run()方法，run()方法运行的是run函数。只有start能启动多线程
+	
+	threading.Timer类：
+		threading.Timer 这是Thread的子类，这个类可以定义一个定时器函数，延时执行
+		threading.Timer(interval, function, args=None, kwargs=None) -> interval 传延迟时长，function -> 传绑定函数名，args用列表传参start执行后，Timer处于等待状态，等待了interval秒后，执行function函数
 	threading.local类：
 		这是一个线程类，用法就是创建一个实例，如：t = threading.local()  得到一个local类实例对象，这个类对象可以得到一个全局对象，然后多线程都可以用这个全局
 		对象互不干扰
